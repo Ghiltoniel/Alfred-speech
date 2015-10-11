@@ -1,0 +1,33 @@
+/* Empty. Add your own CSS if you like */
+
+.scroll{
+	height:100%;
+}
+
+.mic-info{
+	top:50%;
+	width:100%;
+	text-align:center;
+	position:absolute;
+	margin-top:-4rem;
+}
+
+button.button.ion-ios-mic{
+	display:block;
+	text-align:center;
+	width: 100%;
+}
+
+button.button.ion-ios-mic:before{
+	font-size: 7rem;
+}
+
+.mic-result-info{
+	margin-top: 2rem;
+}
+
+.loader-text ion-spinner, .loader-text span{
+	vertical-align:middle;
+	display:inline-block;
+	margin-right:10px;
+}

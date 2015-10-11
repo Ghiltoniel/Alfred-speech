@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <title></title>
+
+    <link href="lib/ionic/css/ionic.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+    <!-- IF using Sass (run gulp sass first), then uncomment below and remove the CSS includes above
+    <link href="css/ionic.app.css" rel="stylesheet">
+    -->
+
+    <!-- ionic/angularjs js -->
+    <script src="lib/ionic/js/ionic.bundle.js"></script>
+
+	<script src="lib/ngCordova/dist/ng-cordova.js"></script>
+	<script src="lib/Alfred-angular-module/alfred.js"></script>
+    <!-- cordova script (this will be a 404 during development) -->
+    <script src="cordova.js"></script>
+
+    <!-- your app's js -->
+    <script src="js/app.js"></script>
+    <script src="js/controller.js"></script>
+  </head>
+  <body ng-app="starter">
+
+    <ion-pane>
+      <ion-content scroll="false">
+		<div ng-controller="Home">
+			<div class="mic-info">
+				<div ng-show="$root.loadingAlfred" class="loader-text"><ion-spinner></ion-spinner><span>Loading Alfred ...</span></div>
+				<div ng-show="$root.loadingAiAPI" class="loader-text"><ion-spinner></ion-spinner><span>Loading Ai.API ...</span></div>
+				<button class="button button-icon icon ion-ios-mic" ng-class="listening ? 'active' : ''" ng-click="record();"></button>
+				<div class="mic-result-info">
+					<div ng-show="$root.listening" class="loader-text"><ion-spinner></ion-spinner><span>Listening</span></div>
+					<div ng-show="action">Action : {{action}}</div>
+					<div ng-repeat="(key, value) in parameters">{{key}} : {{value}}</div>
+				</div>
+			</div>
+		</div>
+      </ion-content>
+    </ion-pane>
+  </body>
+</html>

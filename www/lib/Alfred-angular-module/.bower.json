@@ -1,0 +1,13 @@
+{
+  "name": "Alfred-angular-module",
+  "homepage": "https://github.com/Ghiltoniel/Alfred-angular-module",
+  "_release": "465e6be8c9",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "465e6be8c97117d8d16946ea730222d0bce446c1"
+  },
+  "_source": "https://github.com/Ghiltoniel/Alfred-angular-module.git",
+  "_target": "*",
+  "_originalSource": "https://github.com/Ghiltoniel/Alfred-angular-module.git"
+}
