@@ -1,6 +1,6 @@
 var alfred = angular.module('alfred', []);
 
-alfred.service('auth', function() {
+alfred.service('alfredAuth', function() {
     var user = window.user;
 	var localUser = localStorage.getItem("user");
 	if(typeof(user) == 'undefined' && typeof(localUser) != 'undefined'){
@@ -21,7 +21,7 @@ alfred.service('auth', function() {
     };
 });
 
-alfred.factory('websocket', function($q) {
+alfred.factory('alfredWebsocket', function($q) {
     // We return this object to anything injecting our service
     var Service = {};
     Service.callbacks = [];
@@ -31,9 +31,8 @@ alfred.factory('websocket', function($q) {
     var ws;
 
     function createWebsocket(url){
-        // Create our websocket object with the address to the websocket
+        // Create our alfredWebsocket object with the address to the alfredWebsocket
         ws = new WebSocket(url);
-
         ws.onopen = function(){
             for(var i=0;i<Service.callbacksOpen.length;i++){
                 Service.callbacksOpen[i]();
@@ -164,26 +163,29 @@ alfred.factory('websocket', function($q) {
 });
 
 
-alfred.factory('alfredService', function(websocket, auth, $q, $http) {
+alfred.factory('alfredClient', function(alfredWebsocket, alfredAuth, $q, $http) {
     
     var parameters;
     var Service = {};    
     
     Service.init = function(param){
         parameters = param || {};
-        parameters.name = parameters.name || 'Alfred-node-client';
+        parameters.name = parameters.name || 'Alfred-angular-client';
         parameters.host = parameters.host || 'localhost';
         parameters.port = parameters.port || 13100;
-        parameters.onConnect = parameters.onConnect;
-        parameters.onDisconnect = parameters.onDisconnect;  
+        parameters.onConnect = parameters.onConnect || null;
+        parameters.onDisconnect = parameters.onDisconnect || null;  
         
-        websocket.subscribeOpen(parameters.onConnect);
-        websocket.subscribeClose(parameters.onDisconnect);
-        websocket.init(parameters);
+        alfredWebsocket.subscribeOpen(parameters.onConnect);
+        alfredWebsocket.subscribeClose(parameters.onDisconnect);
+        alfredWebsocket.init(parameters);
+    
+        Service.parameters = parameters;
+        Service.parameters.url = 'http://' + parameters.host;
     };
     
     Service.subscribe = function (callback) {
-        websocket.subscribe(function (data) {
+        alfredWebsocket.subscribe(function (data) {
             callback(data);
         });
     };
@@ -209,7 +211,7 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
         return this;
     };
     
-    websocket.subscribe(function (data) {
+    alfredWebsocket.subscribe(function (data) {
         if(data.Event){
             trigger(data.Event, data.Arguments);
         }
@@ -217,7 +219,7 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
     
     Service.User = {
         login: function(login, password){
-            websocket.send("User_Login", {
+            alfredWebsocket.send("User_Login", {
                 'login': login,
                 'password': password
             });
@@ -230,16 +232,38 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
                     && typeof(data.Arguments.token) != 'undefined'
                     && typeof(data.Arguments.login) != 'undefined'
                     && data.Arguments.login == login) {
-                    auth.setUser(data.Arguments);
-                    websocket.unsubscribe(callback);
-                    deferred.resolve(data);
+                    alfredAuth.setUser(data.Arguments);
+                    alfredWebsocket.unsubscribe(callback);
+                    deferred.resolve(data.Arguments);
                 }
                 else if(data != null && data.Command == 'AuthenticationFailed'){
-                    deferred.reject(data)
+                    alfredWebsocket.unsubscribe(callback);
+                    deferred.reject(data.Arguments);
                 }
             };
                 
-            websocket.subscribe(callback);
+            alfredWebsocket.subscribe(callback);
+            return deferred.promise;
+        },
+        
+        logout: function(){
+            alfredWebsocket.send("User_Logout");
+            
+            var deferred = $q.defer();
+            var callback = function(data){
+                if(data != null
+                    && data.Command == 'Unauthorized'){
+                    alfredWebsocket.unsubscribe(callback);
+                    deferred.reject(data);
+                }
+                else if(data != null
+                    && data.Command == 'Logout'){
+                    alfredWebsocket.unsubscribe(callback);
+                    deferred.resolve(data);
+                }
+            };
+                
+            alfredWebsocket.subscribe(callback);
             return deferred.promise;
         }
     };
@@ -259,11 +283,11 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
             if (sat != null)
                 arguments.sat = sat;
             
-            websocket.send('Device_LightCommand', arguments);
+            alfredWebsocket.send('Device_LightCommand', arguments);
         },
         
         getAll: function () {
-            websocket.send("Device_BroadcastLights");
+            alfredWebsocket.send("Device_BroadcastLights");
             var deferred = $q.defer();
             
             var callback = function(data){
@@ -271,46 +295,46 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
                     && data.Arguments != null
                     && typeof(data.Arguments.lights) != 'undefined') {
                     var lights = JSON.parse(data.Arguments.lights);
-                    websocket.unsubscribe(callback);
+                    alfredWebsocket.unsubscribe(callback);
                     deferred.resolve(lights);
                 }
             };
               
-            websocket.subscribe(callback);
+            alfredWebsocket.subscribe(callback);
             return deferred.promise;
         },
         
         allumeTout: function () {
-            websocket.send("Device_AllumeTout");
+            alfredWebsocket.send("Device_AllumeTout");
         },
         
         eteinsTout: function () {
-            websocket.send("Device_EteinsTout");
+            alfredWebsocket.send("Device_EteinsTout");
         },
         
         allume: function (piece) {
-            websocket.send("Device_Allume",
+            alfredWebsocket.send("Device_Allume",
 			{
                 piece: piece
             });
         },
         
         eteins: function (piece) {
-            websocket.send("Device_Eteins",
+            alfredWebsocket.send("Device_Eteins",
 			{
                 piece: piece
             });
         },
         
         turnUp: function (piece) {
-            websocket.send("Device_TurnUp",
+            alfredWebsocket.send("Device_TurnUp",
 			{
                 piece: piece
             });
         },
         
         turnDown: function (piece) {
-            websocket.send("Device_TurnDown",
+            alfredWebsocket.send("Device_TurnDown",
 			{
                 piece: piece
             });
@@ -319,7 +343,7 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
     
     Service.Sensors = {
         getAll: function () {
-            websocket.send("Sensor_BroadcastSensors");
+            alfredWebsocket.send("Sensor_BroadcastSensors");
             
             var deferred = $q.defer();
             
@@ -330,36 +354,36 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
                             && parseFloat(s.Value) != 0
                             && !s.IsActuator;
                     }); 
-                    websocket.unsubscribe(callback);
+                    alfredWebsocket.unsubscribe(callback);
                     deferred.resolve(sensors);
                 }
             };
               
-            websocket.subscribe(callback);
+            alfredWebsocket.subscribe(callback);
             
             return deferred.promise;
         },
         
         getHistory: function (id) {
-            websocket.send("Sensor_BroadcastSensorHistory", {
+            alfredWebsocket.send("Sensor_BroadcastSensorHistory", {
                 'id': id
             });
             
             var deferred = $q.defer();
             var callback = function(data){
                 if(typeof(data.Arguments.history) != 'undefined') {
-                    websocket.unsubscribe(callback);
-                    deferred.resolve(data.Arguments.history);
+                    alfredWebsocket.unsubscribe(callback);
+                    deferred.resolve(JSON.parse(data.Arguments));
                 }
             };
-            websocket.subscribe(callback);
+            alfredWebsocket.subscribe(callback);
             return deferred.promise;
         }
     };
     
     Service.TextToSpeech = {
         speak: function (text) {
-            websocket.send("Alfred_PlayTempString", {
+            alfredWebsocket.send("Alfred_PlayTempString", {
                 'sentence': text
             });
         }
@@ -367,7 +391,7 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
     
     Service.Chat = {
         send: function (text) {
-            websocket.send("Chat_Send", {
+            alfredWebsocket.send("Chat_Send", {
                 'text': text
             });
         }
@@ -375,13 +399,13 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
     
     Service.Scenario = {
         run: function(name){
-            websocket.send("Scenario_LaunchScenario", {
+            alfredWebsocket.send("Scenario_LaunchScenario", {
                 'mode': name
             });
         },
     
         getAll: function(){
-            websocket.send("Scenario_BroadcastScenarios");
+            alfredWebsocket.send("Scenario_BroadcastScenarios");
             
             
             var deferred = $q.defer();
@@ -390,18 +414,24 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
                   && data.Arguments != null
                   && typeof(data.Arguments.scenarios) != 'undefined') {
                   var scenarios = JSON.parse(data.Arguments.scenarios);
-                  websocket.unsubscribe(callback);
+                  alfredWebsocket.unsubscribe(callback);
                   deferred.resolve(scenarios);
                 }
             };
               
-            websocket.subscribe(callback);
+            alfredWebsocket.subscribe(callback);
             
             return deferred.promise;
         },
     
-        save: function(scenario, callback){
-            $http.post('http://' + parameters.host + '/scenario/save', scenario);
+        save: function(scenario){
+            $http.post('http://' + parameters.host + '/scenario/save',
+    		JSON.stringify(scenario),
+    		{
+    			headers: {
+    				'Content-Type': 'application/json'
+    			}
+    		});
         }
     };
     
@@ -419,7 +449,7 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
     
     Service.People = {
         getAll: function(){
-            websocket.send("People_Broadcast");
+            alfredWebsocket.send("People_Broadcast");
             
             var deferred = $q.defer();
             var callback = function(data){
@@ -428,41 +458,41 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
                   && data.Command == 'People_List'
                   && typeof(data.Arguments.people) != 'undefined') {
                   var people = JSON.parse(data.Arguments.people);
-                  websocket.unsubscribe(callback);
+                  alfredWebsocket.unsubscribe(callback);
                   deferred.resolve(people);
                 }
             };
               
-            websocket.subscribe(callback);
+            alfredWebsocket.subscribe(callback);
             return deferred.promise;
         }
     };
     
     Service.Player = {
         register: function (name) {
-            websocket.send("Player_Register", {
+            alfredWebsocket.send("Player_Register", {
                 'name': name
             });
         },
         
         unregister: function (name) {
-            websocket.send("Player_Unregister");
+            alfredWebsocket.send("Player_Unregister");
         },
         
         sendReadyToPlaySignal : function () {
-            websocket.send("Player_ReadyToPlay");
+            alfredWebsocket.send("Player_ReadyToPlay");
         },
     
         sendPlayPauseSignal : function () {
-            websocket.send("MediaManager_PlayPause");
+            alfredWebsocket.send("MediaManager_PlayPause");
         },
     
         sendNextSongSignal : function () {
-            websocket.send("MediaManager_Next");
+            alfredWebsocket.send("MediaManager_Next");
         },
         
         sendPreviousSongSignal : function () {
-            websocket.send("MediaManager_Previous");
+            alfredWebsocket.send("MediaManager_Previous");
         },
     
         sendUpdateStatusSignal : function (status, duration, position, volume) {
@@ -480,12 +510,12 @@ alfred.factory('alfredService', function(websocket, auth, $q, $http) {
             if (!isNaN(volume))
                 args.volume = ('' + volume).replace('.', ',');
     
-            websocket.send("MediaManager_UpdateStatus", args);
+            alfredWebsocket.send("MediaManager_UpdateStatus", args);
         }
     };
     
     Service.ping = function(){
-        websocket.sendRaw('ping');
+        alfredWebsocket.sendRaw('ping');
     };
     
     return Service;

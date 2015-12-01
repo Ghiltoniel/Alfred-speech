@@ -5,7 +5,7 @@
 // the 2nd parameter is an array of 'requires'
 angular.module('starter.controller', [])
 
-.controller('Home', function($scope, $rootScope, alfredService, $http){
+.controller('Home', function($scope, $rootScope, alfredClient, $http){
 	
 	$scope.record = function(){
 		if($rootScope.listening){
@@ -17,7 +17,7 @@ angular.module('starter.controller', [])
 		$scope.parameters = '';
 		$rootScope.listening = true;
 		try {     
-		  alfredService.Lights.allume('Salon');
+		  alfredClient.Lights.allume('Salon');
 		  ApiAIPlugin.requestVoice(
 			{}, // empty for simple requests, some optional parameters can be here
 			function (response) {
@@ -27,19 +27,19 @@ angular.module('starter.controller', [])
 				$scope.$apply();
 				switch(response.result.action){
 					case 'TurnOn':
-						alfredService.Lights.allume(response.result.parameters.Room);
+						alfredClient.Lights.allume(response.result.parameters.Room);
 					break;
 					case 'TurnOff':
-						alfredService.Lights.eteins(response.result.parameters.Room);
+						alfredClient.Lights.eteins(response.result.parameters.Room);
 					break;
 					case 'TurnAllOn':
-						alfredService.Lights.allumeTout();
+						alfredClient.Lights.allumeTout();
 					break;
 					case 'TurnAllOff':
-						alfredService.Lights.eteinsTout();
+						alfredClient.Lights.eteinsTout();
 					break;
 					case 'Scenario':
-						alfredService.Scenario.run(response.result.parameters.Scenario);
+						alfredClient.Scenario.run(response.result.parameters.Scenario);
 					break;
 				}
 			},

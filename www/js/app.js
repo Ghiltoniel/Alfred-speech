@@ -5,18 +5,18 @@
 // the 2nd parameter is an array of 'requires'
 angular.module('starter', ['ionic', 'starter.controller', 'alfred'])
 
-.run(function($ionicPlatform, $rootScope, $http, alfredService) {
+.run(function($ionicPlatform, $rootScope, $http, alfredClient) {
 	
 	ionic.Platform.ready(function(){
 		$rootScope.loadingAlfred = true;
-		alfredService.init({
+		alfredClient.init({
 			name: 'Alfred-angular-client',
 			host: 'nam.kicks-ass.org',
 			port: 13100,
 			onConnect: function(){
-				alfredService.User.login('guigui', 'Ghiltoniel1').then(function(data){
+				alfredClient.User.login('guigui', 'Ghiltoniel1').then(function(data){
 					if(data.Command == 'Authenticated'){
-						alfredService.Scenario.getAll().then(function(data){
+						alfredClient.Scenario.getAll().then(function(data){
 							var entries = [];
 							for(var i in data){
 								entries.push({
